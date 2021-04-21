@@ -99,10 +99,12 @@ def characters2constants(liste, dictionnaire):
 	for element in liste:
 		value = dictionnaire[str(element)]
 		liste_constantes.append(value)
-	liste_constantes.append(ENTER)
 	return liste_constantes
 		
-		
+def constant2character(constant, dictionnaire):
+	for k, val in dictionnaire.items():
+		if val == constant:
+			return k		
 """		
 def try_get_data(exp, trial, list_licit_char, nb):
 	# We assume that an array of digits and letter has just been displayed 
@@ -117,14 +119,15 @@ def try_get_data(exp, trial, list_licit_char, nb):
 """
 
 
-def get_data(exp, trial, list_licit_char, nb_occurences, n_trial, n_set):
+def get_data(exp, trial, list_licit_char, nb_occurences, n_trial, n_set, partial = True):
 	key = 'a'
 	n = 0
 	while key != ENTER and n < nb_occurences:
 		key, rt = exp.keyboard.wait(keys = list_licit_char, duration = MAX_DELAY_RESPONSE)
 		if key in list_licit_char:
+			char = constant2character(key, dictionnaire())
 			#display_answer(trial, key, n)
-			exp.data.add([n_set, 'y', nb_occurences, n_trial, key, rt])
+			exp.data.add([n_set, partial, nb_occurences == 3, n_trial, char, rt])
 			list_licit_char.remove(key)
 			n += 1
 	
