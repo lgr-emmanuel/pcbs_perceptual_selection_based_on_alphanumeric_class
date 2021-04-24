@@ -75,7 +75,7 @@ def draw_characters(liste, distance_to_origin):
 	
 	trial = design.Trial()
 	for k, char in enumerate(liste):
-		location = (np.cos(k*np.pi/3)*distance_to_origin, np.sin(k*np.pi/3)*400)
+		location = (np.cos(k*np.pi/3)*distance_to_origin, np.sin(k*np.pi/3)*distance_to_origin)
 		stim = stimuli.TextLine(char, location)
 		stim.preload()
 		trial.add_stimulus(stim)
