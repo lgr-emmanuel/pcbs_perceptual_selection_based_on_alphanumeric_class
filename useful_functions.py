@@ -67,7 +67,12 @@ def make_list(set_exp):
 		index = 1
 	return index, liste
 			
-
+def circle():
+	trial_circle = design.Trial()
+	circle = stimuli.Circle(3)
+	circle.preload()
+	trial_circle.add_stimulus(circle)
+	return circle
 
 def draw_characters(liste, distance_to_origin):
 	if len(liste) != 6:
@@ -87,7 +92,7 @@ def message_reporting_mistake(trial):
 	trial.add_stimulus(message)
 	message.present()
 
-def display_answer(trial, key, index):
+def display_answer(trial, key, index): # il faut peut-être que j'aie créé le stimulus *avant* de commencer l'expérience
 	location = (-200 + index*200, 0)
 	character = stimuli.TextLine(key, location)
 	character.preload()
@@ -132,7 +137,24 @@ def get_data(exp, trial, list_licit_char, nb_occurences, n_trial, n_set, partial
 			n += 1
 	
 	
+def design_unique_transition(index):
+	msg_waiting = stimuli.TextLine("Press a key when ready for trial #{}".format(index+2))
+	msg_waiting.preload()
+	return msg_waiting
+
+def design_all_transitions(n_trials):
+	list_stimuli = []
+	for k in range(n_trials):
+		stim = design_unique_transition(k)
+		list_stimuli.append(stim)
+	return list_stimuli
 	
 	
-	
+def display_transition(blankscreen, msg_waiting, exp):
+	blankscreen.present()
+	exp.clock.wait(200)
+	msg_waiting.present()
+	exp.keyboard.wait()
+	blankscreen.present()
+
 	

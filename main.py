@@ -52,16 +52,13 @@ for k in range(N_TRIALS):
 	
 
 	
-trial_circle = design.Trial()
-circle = stimuli.Circle(3)
-circle.preload()
-trial_circle.add_stimulus(circle)
+circle = usf.circle()
 
-trial_waiting = design.Trial()
-msg_waiting = stimuli.TextLine("Press when ready for the next trial")
 
 exp.add_block(block_1)
 blankscreen = stimuli.BlankScreen()
+
+list_transitions = usf.design_all_transitions(N_TRIALS)
 
 instructions_partial = stimuli.TextScreen("Instructions", f"""Letters and digits will be displayed on the screen 
 		Your task is to report as many digits as possible while ignoring letters""")
@@ -87,10 +84,8 @@ for trial in block_1.trials:
 	exp.clock.wait(1000) # temps de présentation du stimulus
 	blankscreen.present()
 	usf.get_data(exp, trial, liste_des_listes_constantes_p[i], choice_nb_digits_p[i], i+1, n_set)
-	i+= 1
-	msg_waiting.present()
-	exp.keyboard.wait()
-	blankscreen.present()
+	usf.display_transition(blankscreen, list_transitions[i], exp)
+	i+=1 # la transition s'affiche une fois de trop
 
 
 
