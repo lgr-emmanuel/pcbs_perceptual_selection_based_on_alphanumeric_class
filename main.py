@@ -9,6 +9,7 @@ import random
 MAX_DELAY_RESPONSE = 10000
 N_TRIALS = 4
 DISTANCE_TO_ORIGIN = 400
+SPACE_BAR = 32
 
 """ Each participant is stimulated with one of the following sets of characters, and with one only """
 set_1 = [['1', '3', '4', '5', '6', '8'], ['C', 'J', 'P', 'Q', 'X', 'Y']]
@@ -59,9 +60,9 @@ reporting_error = usf.message_reporting_mistake()
 list_transitions = usf.design_all_transitions(N_TRIALS)
 
 instructions_partial = stimuli.TextScreen("Instructions", f"""Letters and digits will be displayed on the screen 
-		Your task is to report as many digits as possible while ignoring letters""")
+		Your task is to report as many digits as possible while ignoring letters. Press space bar when ready""")
 instructions_whole = stimuli.TextScreen("Instructions", f""" Letters and digits will be displayed on the screen.
-Your task is to report as many characters as possible, be they letters or digits""")
+Your task is to report as many characters as possible, be they letters or digits. Press space_bar when ready""")
 
 
 
@@ -70,7 +71,7 @@ exp.add_data_variable_names(['n_set', 'partial', '3_digits','trial', 'char', 'RT
 control.start(skip_ready_screen = True)
 
 instructions_partial.present()
-exp.keyboard.wait()
+exp.keyboard.wait(SPACE_BAR)
 blankscreen.present()
 
 circle.present()

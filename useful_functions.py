@@ -4,6 +4,7 @@ from expyriment import design, control, stimuli, io
 
 MAX_DELAY_RESPONSE = 3000
 ENTER = 13
+SPACE_BAR = 32
 
 def dictionnaire():
 	""" It maps the characters we use to the associated key constant of the keyboard
@@ -110,10 +111,10 @@ def circle():
 
 def design_unique_transition(index, n_trials):
 	if index == n_trials -1:
-		msg_waiting = stimuli.TextLine("The first part of the experiment is over. Press a key to continue")
+		msg_waiting = stimuli.TextLine("The first part of the experiment is over. Press space bar to continue")
 		msg_waiting.preload()
 		return msg_waiting
-	msg_waiting = stimuli.TextLine("Press a key when ready for trial #{}".format(index+2))
+	msg_waiting = stimuli.TextLine("Press space bar when ready for trial #{}".format(index+2))
 	msg_waiting.preload()
 	return msg_waiting
 
@@ -130,13 +131,14 @@ def message_reporting_mistake():
 	message.preload()
 	return message
 
-def display_answer(trial, key, index): # il faut peut-être que je crée le stimulus *avant* de commencer l'expérience
-	location = (-200 + index*200, 0)
-	character = stimuli.TextLine(key, location)
-	character.preload()
-	trial.add_stimulus(character)
-	character.present(clear = False)
-
+def display_answer(trial, char, index, nb_occurence): # il faut peut-être que je crée le stimulus *avant* de commencer l'expérience
+	if nb_occurence == 3:
+		location = (-200 + index*200, 0)
+		character = stimuli.TextLine(char, location)
+		character.present(clear = False)
+	else:
+		character = stimuli.TextLine(char, (0, 0))
+		character.present()
 		
 def constant2character(constant, dictionnaire):
 	"""Given a single constant, returns the associated character"""
@@ -162,17 +164,17 @@ def get_data(exp, trial, list_licit_char, nb_occurences, n_trial, n_set, partial
 	n = 0
 	while key != ENTER and n < nb_occurences:
 		key, rt = exp.keyboard.wait()
-		if key in list_licit_char:
+		if key == SPACE_BAR or key == ENTER:
+			pass
+		else:
 			char = constant2character(key, dictionnaire())
-			#display_answer(trial, key, n)
-			exp.data.add([n_set, partial, nb_occurences, n_trial, char, rt])
-			list_licit_char.remove(key)
+			display_answer(trial, char, n, nb_occurences)
+			exp.data.add([n_set, partial, nb_occurences==3, n_trial, char, rt])
+			if key in list_licit_char:
+				list_licit_char.remove(key)
 			n += 1
-		elif key != ENTER:
-			reporting_error.present()
-			exp.clock.wait(500)
-			blankscreen.present()
-			
+	exp.clock.wait(1000)
+	
 	
 def display_transition(blankscreen, msg_waiting, exp):
 	blankscreen.present()
@@ -181,4 +183,6 @@ def display_transition(blankscreen, msg_waiting, exp):
 	exp.keyboard.wait()
 	blankscreen.present()
 
+
+""" Réfléchir à ne pas enregistrer le RT ; par contre enregistrer si la réponse est bonne """
 	
