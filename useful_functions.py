@@ -2,9 +2,9 @@ import numpy as np
 import random
 from expyriment import design, control, stimuli, io
 
-MAX_DELAY_RESPONSE = 3000
 ENTER = 13
 SPACE_BAR = 32
+N_CHAR_PER_TRIAL = 6
 
 def dict_map_char_to_keyboard_constant():
 	""" For instance, the constant of A is 98. *Careful* : this mapping holds 
@@ -46,7 +46,7 @@ def begin_with_partial_report():
 def choose_three_digits(liste):
 	""" The list given in argument has two elements : a list of digits and a list of letters
 	It returns a list of six characters, including three digits"""
-	indexes = [k for k in range(6)]
+	indexes = [k for k in range(N_CHAR_PER_TRIAL)]
 	chosen_indexes = np.random.choice(indexes, 3, replace = False)
 	chosen_digits =  [liste[0][k] for k in chosen_indexes]
 	chosen_indexes = np.random.choice(indexes, 3, replace = False)
@@ -60,7 +60,7 @@ def choose_three_digits(liste):
 def choose_one_digit(liste):
 	""" The list given in argument has two elements : a list of digits and a list of letters
 	It returns a list of six characters, including one digit"""
-	indexes = [k for k in range(6)]
+	indexes = [k for k in range(N_CHAR_PER_TRIAL)]
 	chosen_indexes = np.random.choice(indexes, 5, replace = False)
 	chosen_letters =  [liste[1][k] for k in chosen_indexes]
 	chosen_indexes = np.random.choice(indexes, 1)
@@ -101,7 +101,7 @@ def design_trial_drawing_characters(list_of_used_characters, distance_to_origin)
 	 the characters on the screen. It returns the trial. The variable DISTANCE_TO_ORIGIN
 	 is the radius of the circle on which the characters are drawn """
 	
-	if len(list_of_used_characters) != 6:
+	if len(list_of_used_characters) != N_CHAR_PER_TRIAL:
 		return "The length of the list does not match the experimental design"
 	
 	trial = design.Trial()
@@ -131,7 +131,7 @@ def design_circle():
 
 def design_unique_transition(index, n_trials):
 	if index == n_trials -1:
-		msg_waiting = stimuli.TextLine("The first part of the experiment is over. Press space bar to continue")
+		msg_waiting = stimuli.TextLine("This part of the experiment is over. Press space bar to continue")
 		msg_waiting.preload()
 		return msg_waiting
 	msg_waiting = stimuli.TextLine("Press space bar when ready for trial #{}".format(index+2))
@@ -146,14 +146,13 @@ def design_all_transitions(n_trials):
 	return list_stimuli
 
 
-def message_reporting_mistake():
-	message = stimuli.TextLine('This digit was not presented on the screen')
-	message.preload()
-	return message
-
-def display_answer(trial, char, index, total_nb_of_digits): # il faut peut-être que je crée le stimulus *avant* de commencer l'expérience
-	if total_nb_of_digits == 3:
-		location = (-200 + index*200, 0)
+def display_answer(is_partial, trial, char, index, total_nb_of_digits): # problème pour whole report
+	left_side = -400
+	if is_partial is True:
+		left_side = -200
+		
+	if total_nb_of_digits == 3 or is_partial is False:
+		location = (left_side + index*200, 0)
 		character = stimuli.TextLine(char, location)
 		character.present(clear = False)
 	else:
@@ -166,24 +165,25 @@ def keyboard_constant2character(constant, dict_char_to_keyboardconstants):
 		if val == constant:
 			return char		
 
-""" Je ferais mieux de faire un get_data, un remember_data un display data / error """
-
-def get_data_of_single_trial(exp, trial, list_licit_char, nb_digits, n_trial, n_set):
+def get_data_of_single_trial(exp, is_partial, trial, list_licit_char, nb_digits, n_trial, n_set):
 	""" Returns the list of the responses of the participant and the total reponse time of the trial """
-	
+	dict_char_to_keyboardconstants = dict_map_char_to_keyboard_constant()
+	max_nb_loops = 6
+	if is_partial is True:
+		max_nb_loops = nb_digits
 	key = 'a'
 	n = 0
 	response = []
 	rt_trial = 0
-	while key != ENTER and n < nb_digits:
+	while key != ENTER and n < max_nb_loops:
 		key, rt = exp.keyboard.wait()
 		rt_trial += rt
 		if key == SPACE_BAR or key == ENTER:
 			pass
 		else:
-			char = keyboard_constant2character(key, dict_map_char_to_keyboard_constant())
+			char = keyboard_constant2character(key, dict_char_to_keyboardconstants)
 			response.append(char)
-			display_answer(trial, char, n, nb_digits)
+			display_answer(is_partial, trial, char, n, nb_digits)
 			if key in list_licit_char:
 				list_licit_char.remove(key)
 			n += 1
@@ -191,18 +191,25 @@ def get_data_of_single_trial(exp, trial, list_licit_char, nb_digits, n_trial, n_
 	exp.clock.wait(1000)
 	return response, rt_trial
 
-def check_validity_of_response(response, list_valid_responses, nb_digits):
+def check_validity_of_response(is_partial, response, list_valid_responses, nb_digits_displayed):
+	""" This function checks the validity of the responses, and returns a list of H (Hit),
+	FA (False alarms) and M (misses) """
+	
 	results_validity = []
-	for element in response:
+	nb_of_possible_answers = 6
+	
+	if is_partial is True:
+		nb_of_possible_answers = nb_digits_displayed
+	
+	for element in response: # Fills with either hits or false alarms
 		if element in list_valid_responses:
 			results_validity.append('H')
 		else:
 			results_validity.append('FA')
-	for j in range(nb_digits - len(response)):
+	for j in range(nb_of_possible_answers - len(response)): # Adds misses for unreported characters
 		results_validity.append('M')
 	
 	return results_validity
-
 	
 def display_transition_intertrials(blankscreen, msg_waiting, exp):
 	blankscreen.present()
@@ -212,5 +219,4 @@ def display_transition_intertrials(blankscreen, msg_waiting, exp):
 	blankscreen.present()
 
 
-""" Réfléchir à ne pas enregistrer le RT ; par contre enregistrer si la réponse est bonne """
 	
