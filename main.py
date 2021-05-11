@@ -5,7 +5,6 @@ from expyriment import design, control, stimuli, io
 import useful_functions as usf
 import random
 
-MAX_DELAY_RESPONSE = 10000
 N_TRIALS = 4
 DISTANCE_TO_ORIGIN = 400
 SPACE_BAR = 32
@@ -70,39 +69,71 @@ exp.add_block(block_1)
 exp.add_block(block_2)
 
 
-circle = usf.design_circle()
-blankscreen = stimuli.BlankScreen()
-list_transitions = usf.design_all_transitions(N_TRIALS)
+instructions_partial = stimuli.TextScreen("Instructions", f"""Letters and digits will be displayed on the screen. 
+Your task is to report as many digits as possible while ignoring letters. There are either 1 or 3 digits. You must report only digits you are fairly certain of. If you have not caught as many digits as there were displayed, report those you noticed and then press ENTER to continue. Press SPACE BAR when ready""")
 
-instructions_partial = stimuli.TextScreen("Instructions", f"""Letters and digits will be displayed on the screen 
-		Your task is to report as many digits as possible while ignoring letters. Press space bar when ready""")
 instructions_whole = stimuli.TextScreen("Instructions", f""" Letters and digits will be displayed on the screen.
-Your task is to report as many characters as possible, be they letters or digits. Press space_bar when ready""")
+Your task is to report as many characters as possible, be they letters or digits. You must report only characters you are fairly certain of. If you have not caught as many characters as there were displayed, report those you noticed and then press ENTER to continue. Press SPACE BAR when ready""")
 
 
-
-exp.add_data_variable_names(['n_set', ' partial', ' 3_digits',' #trial', ' response', ' validity', ' RT']) # int, boolean, boolean, int, list, list, int
+exp.add_data_variable_names(['n_set', ' is_partial', ' is_3_digits',' #trial', ' response', ' validity', ' RT']) # int, boolean, boolean, int, list, list, int
 
 control.start(skip_ready_screen = True)
 
-instructions_partial.present()
-exp.keyboard.wait(SPACE_BAR)
-blankscreen.present()
 
-circle.present()
-exp.clock.wait(100)
-i = 0
-for trial in block_1.trials:
-	for stimulus in trial.stimuli:
-		stimulus.present(clear = False)
-	exp.clock.wait(1000) # temps de présentation du stimulus jusque là ça tourne
-	blankscreen.present()
-	response_to_one_trial, rt_trial = usf.get_data_of_single_trial(exp, trial, list_of_lists_keyboard_constants_p[i], choice_nb_digits_p[i], i+1, nb_set)
-	validity_of_one_trial = usf.check_validity_of_response(response_to_one_trial, list_of_lists_allowed_digits_p[i], choice_nb_digits_p[i])
+def run_session(exp, block, is_partial, list_of_lists_keyboard_constants, list_of_lists_validity, choice_nb_digits, instructions, nb_set):
+	""" This is the most important function of the project : it runs half the experiment : either the partial 
+	experiment or the whole experiment """
 	
-	exp.data.add([nb_set, True, choice_nb_digits_p[i] == 3, i+1, response_to_one_trial, validity_of_one_trial, rt_trial])
-	usf.display_transition_intertrials(blankscreen, list_transitions[i], exp)
-	i+=1
+	""" The variable < list_of_lists_validity > is called to check the validity of the responses at each trial.
+	For partial report : it is the list of the list of allowed digits at each trial
+	For whole report : it is the list of the list of the characters that are displayed at each trial """
+	
+	circle = usf.design_circle()
+	blankscreen = stimuli.BlankScreen()
+	list_transitions = usf.design_all_transitions(N_TRIALS)
+	
+	instructions.present()
+	exp.keyboard.wait(SPACE_BAR)
+	blankscreen.present()
+	
+	careful_msg = stimuli.TextScreen("Careful :", f""" When reporting digits, do not use a numpad, but use the keys on top of your keyboard. For instance, if you want to report a '1', press '&'. Do not press Shift + '&', it would lead to an interruption of the program. Press SPACE BAR when ready""")
+	careful_msg.present()
+	exp.keyboard.wait(SPACE_BAR)
+	blankscreen.present()
+	
+	circle.present()
+	exp.clock.wait(100)
+	
+	i = 0
+	for trial in block.trials:
+		for stimulus in trial.stimuli:
+			stimulus.present(clear = False)
+		exp.clock.wait(1000) # temps de présentation du stimulus jusque là ça tourne
+		blankscreen.present()
+		response_to_one_trial, rt_trial = usf.get_data_of_single_trial(exp, is_partial, trial, 		list_of_lists_keyboard_constants[i], choice_nb_digits[i], i+1, nb_set)
+		validity_of_one_trial = usf.check_validity_of_response(is_partial, response_to_one_trial, list_of_lists_validity[i], choice_nb_digits[i])
+	
+		exp.data.add([nb_set, is_partial, choice_nb_digits[i] == 3, i+1, response_to_one_trial, validity_of_one_trial, rt_trial])
+		usf.display_transition_intertrials(blankscreen, list_transitions[i], exp)
+		i+=1
+
+
+""" From here, the program consists in the experiment """
+order = usf.begin_with_partial_report()
+
+if order is True:
+	run_session(exp, block_1, True, list_of_lists_keyboard_constants_p, list_of_lists_allowed_digits_p, choice_nb_digits_p, instructions_partial, nb_set)
+	run_session(exp, block_2, False, list_of_lists_keyboard_constants_w, list_of_lists_char_w, choice_nb_digits_w, instructions_whole, nb_set)
+
+else:
+	run_session(exp, block_2, False, list_of_lists_keyboard_constants_w, list_of_lists_char_w, choice_nb_digits_w, instructions_whole, nb_set)
+	run_session(exp, block_1, True, list_of_lists_keyboard_constants_p, list_of_lists_allowed_digits_p, choice_nb_digits_p, instructions_partial, nb_set)
+	
+goodbye_message = stimuli.TextScreen("Thank you very much for participating to this experiment", f"""We wish you a nice day""")
+
+goodbye_message.present()
+exp.clock.wait(3000)
 
 control.end()
 
