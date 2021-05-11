@@ -6,9 +6,10 @@ MAX_DELAY_RESPONSE = 3000
 ENTER = 13
 SPACE_BAR = 32
 
-def dictionnaire():
-	""" It maps the characters we use to the associated key constant of the keyboard
-	for instance, the constant of A is 98"""
+def dict_map_char_to_keyboard_constant():
+	""" For instance, the constant of A is 98. *Careful* : this mapping holds 
+	for a French "azerty" keyboard ; it might not hold for foreign keyboards"""
+	
 	dictionnaire = {}
 	dictionnaire['1'] = 38
 	dictionnaire['2'] = 233
@@ -36,7 +37,11 @@ def which_set_of_characters(set_1, set_2, set_3):
 	else:
 		return n, set_3
 
-
+def begin_with_partial_report():
+	n = random.randint(0,1)
+	if n == 0:
+		return True
+	return False
 
 def choose_three_digits(liste):
 	""" The list given in argument has two elements : a list of digits and a list of letters
@@ -68,7 +73,8 @@ def choose_one_digit(liste):
 		
 
 def make_list(set_exp):
-	""" It returns a list of characters randomly chosen, with equal chance to have 1 and 3 digits ; it returns also True if there are three digits in the liste, False otherwise"""
+	""" It returns a list of characters randomly chosen, with equal chance to have 1 and 3 digits ;
+	it returns also True if there are three digits in the liste, False otherwise"""
 	index = random.randint(0, 1)
 	if index == 0:
 		boolean = 3
@@ -78,30 +84,44 @@ def make_list(set_exp):
 		boolean = 1
 	return boolean, liste
 
-def draw_characters(liste, distance_to_origin):
-	""" Given a list of characters, it designs the trial which will allow us to display the characters on the screen. It returns the trial."""
+
+def remove_letters_from_list_of_char(list_of_char):
+	list_of_digits = []
+	for char in list_of_char:
+		try:
+			int(char)
+			list_of_digits.append(char)
+		except:
+			pass
+	return list_of_digits
+
+
+def design_trial_drawing_characters(list_of_used_characters, distance_to_origin):
+	""" Given a list of characters, it designs the trial which will allow us to display
+	 the characters on the screen. It returns the trial. The variable DISTANCE_TO_ORIGIN
+	 is the radius of the circle on which the characters are drawn """
 	
-	if len(liste) != 6:
+	if len(list_of_used_characters) != 6:
 		return "The length of the list does not match the experimental design"
 	
 	trial = design.Trial()
-	for k, char in enumerate(liste):
+	for k, char in enumerate(list_of_used_characters):
 		location = (np.cos(k*np.pi/3)*distance_to_origin, np.sin(k*np.pi/3)*distance_to_origin)
 		stim = stimuli.TextLine(char, location)
 		stim.preload()
 		trial.add_stimulus(stim)
 	return trial
 
-def characters2constants(liste, dictionnaire):
+def characters2keyboard_constants(list_characters, dict_char_to_keyboardconstants):
 	"""Given a list of characters, returns the list of associated constants"""
-	liste_constantes = []
-	for element in liste:
-		value = dictionnaire[str(element)]
-		liste_constantes.append(value)
-	return liste_constantes
+	list_keyboard_constants = []
+	for element in list_characters:
+		value = dict_char_to_keyboardconstants[str(element)]
+		list_keyboard_constants.append(value)
+	return list_keyboard_constants
 
 			
-def circle():
+def design_circle():
 	"""It designs the fixation point on the screen"""
 	trial_circle = design.Trial()
 	circle = stimuli.Circle(3)
@@ -131,8 +151,8 @@ def message_reporting_mistake():
 	message.preload()
 	return message
 
-def display_answer(trial, char, index, nb_occurence): # il faut peut-être que je crée le stimulus *avant* de commencer l'expérience
-	if nb_occurence == 3:
+def display_answer(trial, char, index, total_nb_of_digits): # il faut peut-être que je crée le stimulus *avant* de commencer l'expérience
+	if total_nb_of_digits == 3:
 		location = (-200 + index*200, 0)
 		character = stimuli.TextLine(char, location)
 		character.present(clear = False)
@@ -140,43 +160,51 @@ def display_answer(trial, char, index, nb_occurence): # il faut peut-être que j
 		character = stimuli.TextLine(char, (0, 0))
 		character.present()
 		
-def constant2character(constant, dictionnaire):
-	"""Given a single constant, returns the associated character"""
-	for char, val in dictionnaire.items():
+def keyboard_constant2character(constant, dict_char_to_keyboardconstants):
+	"""Given a single keyboard constant, returns the associated character"""
+	for char, val in dict_char_to_keyboardconstants.items():
 		if val == constant:
 			return char		
-"""		
-def try_get_data(exp, trial, list_licit_char, nb):
-	# We assume that an array of digits and letter has just been displayed 
-	#We want the user to write down the digits she noticed 
-	for j in range(nb):
-		key, rt = exp.keyboard.wait(list_licit_char)
-		if key == ENTER:
-			break
-		elif key in list_licit_char:
-			display_answer(trial, key, j)
-			exp.data.add([trial, key])
-"""
+
 """ Je ferais mieux de faire un get_data, un remember_data un display data / error """
 
-def get_data(exp, trial, list_licit_char, nb_occurences, n_trial, n_set, partial, reporting_error, blankscreen):
+def get_data_of_single_trial(exp, trial, list_licit_char, nb_digits, n_trial, n_set):
+	""" Returns the list of the responses of the participant and the total reponse time of the trial """
+	
 	key = 'a'
 	n = 0
-	while key != ENTER and n < nb_occurences:
+	response = []
+	rt_trial = 0
+	while key != ENTER and n < nb_digits:
 		key, rt = exp.keyboard.wait()
+		rt_trial += rt
 		if key == SPACE_BAR or key == ENTER:
 			pass
 		else:
-			char = constant2character(key, dictionnaire())
-			display_answer(trial, char, n, nb_occurences)
-			exp.data.add([n_set, partial, nb_occurences==3, n_trial, char, rt])
+			char = keyboard_constant2character(key, dict_map_char_to_keyboard_constant())
+			response.append(char)
+			display_answer(trial, char, n, nb_digits)
 			if key in list_licit_char:
 				list_licit_char.remove(key)
 			n += 1
+			
 	exp.clock.wait(1000)
+	return response, rt_trial
+
+def check_validity_of_response(response, list_valid_responses, nb_digits):
+	results_validity = []
+	for element in response:
+		if element in list_valid_responses:
+			results_validity.append('H')
+		else:
+			results_validity.append('FA')
+	for j in range(nb_digits - len(response)):
+		results_validity.append('M')
 	
+	return results_validity
+
 	
-def display_transition(blankscreen, msg_waiting, exp):
+def display_transition_intertrials(blankscreen, msg_waiting, exp):
 	blankscreen.present()
 	exp.clock.wait(200)
 	msg_waiting.present()
