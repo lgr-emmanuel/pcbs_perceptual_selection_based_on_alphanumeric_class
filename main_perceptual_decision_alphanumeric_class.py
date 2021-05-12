@@ -66,7 +66,7 @@ block_2 = design.Block(name = "Whole report")
 
 choice_nb_digits_w = [] # Same as for partial report
 all_lists_of_keyboard_constants_w = [] # Same as for partial report
-all_lists_of_char_w = []
+all_lists_of_char_w = [] # To check validity later on
 
 for j in range(N_TRIALS): # We design the trials for whole report
 	nb_digits, list_of_characters_used = usf.make_list(set_chosen_for_exp)
