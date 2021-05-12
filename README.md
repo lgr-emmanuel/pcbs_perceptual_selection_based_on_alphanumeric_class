@@ -1,7 +1,7 @@
 # pcbs_perceptual_selection_based_on_alphanumeric_class
 PCBS Final project : Perceptual selection based on alphanumeric class
 
-## Descrption of Duncan's experiment
+## Description of Duncan's experiment
 The purpose of the project is to simulate the experiments described in the article "Perceptual selection based on alphanumeric class" (Duncan 1983).
 
 In this article, participants are shown biref displays of digits and letters. There are two different reports. In the partial report, participants are asked to report as many digits as possible, while ignoring the letters (or vice versa). In the whole report, they are asked to report both digits and letters. Participants take part to both reports, in a random order.
